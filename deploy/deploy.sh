@@ -34,7 +34,7 @@ log "Sekrety środowiska zapisane (taskapi-secrets)"
 
 # 2. Konfiguracja środowiska (kustomize overlay) + obraz
 kubectl kustomize "k8s/overlays/$ENV_NAME" \
-  | sed -e "s|__IMAGE__|$IMAGE|g" -e "s|__BROKEN__|$BROKEN|g" -e "s|__COMMIT__|${COMMIT:-manual}|g" \
+  | sed -E -e "s|__IMAGE__|$IMAGE|g" -e "s|\"?__BROKEN__\"?|\"$BROKEN\"|g" -e "s|\"?__COMMIT__\"?|\"${COMMIT:-manual}\"|g" \
   | $K apply -f - || exit 1
 
 # 3. Oczekiwanie na bazę, monitoring i aplikację
