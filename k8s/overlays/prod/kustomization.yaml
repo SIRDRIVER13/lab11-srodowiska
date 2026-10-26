@@ -1,0 +1,20 @@
+# Środowisko: production
+namespace: prod
+resources: [../../base]
+labels:
+  - pairs: {environment: production}
+configMapGenerator:
+  - name: taskapi-config          # zmiana konfiguracji = nowa nazwa = automatyczny restart podów
+    envs: [app.env]
+  - name: prometheus-config
+    files: [prometheus.yml]
+patches:
+  - target: {kind: Deployment, name: taskapi}
+    patch: |-
+      - {op: replace, path: /spec/replicas, value: 2}
+  - target: {kind: Service, name: taskapi}
+    patch: |-
+      - {op: replace, path: /spec/ports/0/nodePort, value: 30211}
+  - target: {kind: Service, name: prometheus}
+    patch: |-
+      - {op: replace, path: /spec/ports/0/nodePort, value: 30219}

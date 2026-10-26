@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: taskapi}
+spec:
+  replicas: 1
+  progressDeadlineSeconds: 120
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector: {matchLabels: {app: taskapi}}
+  template:
+    metadata:
+      labels: {app: taskapi}
+      annotations: {deploy/commit: "__COMMIT__"}
+    spec:
+      containers:
+        - name: app
+          image: __IMAGE__
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: {name: taskapi-config}          # konfiguracja środowiska
+          env:
+            - name: DB_PASSWORD                              # sekrety środowiska
+              valueFrom: {secretKeyRef: {name: taskapi-secrets, key: DB_PASSWORD}}
+            - name: PAYMENT_API_KEY
+              valueFrom: {secretKeyRef: {name: taskapi-secrets, key: PAYMENT_API_KEY}}
+            - {name: APP_BROKEN, value: "__BROKEN__"}
+          ports: [{containerPort: 8000}]
+          readinessProbe:
+            httpGet: {path: /health, port: 8000}
+            periodSeconds: 3
+          livenessProbe:
+            httpGet: {path: /, port: 8000}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources: {requests: {cpu: 50m, memory: 96Mi}, limits: {cpu: 500m, memory: 256Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: taskapi}
+spec:
+  type: NodePort
+  selector: {app: taskapi}
+  ports: [{port: 80, targetPort: 8000, nodePort: 30000}]
+---
+# Usługa bez ClusterIP: Prometheus odpytuje każdy pod osobno (DNS zwraca adresy podów)
+apiVersion: v1
+kind: Service
+metadata: {name: taskapi-metrics}
+spec:
+  clusterIP: None
+  selector: {app: taskapi}
+  ports: [{port: 8000, targetPort: 8000}]

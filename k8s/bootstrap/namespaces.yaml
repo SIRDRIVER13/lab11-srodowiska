@@ -1,0 +1,12 @@
+# Wykonywane raz przez administratora klastra
+apiVersion: v1
+kind: Namespace
+metadata: {name: test, labels: {environment: test}}
+---
+apiVersion: v1
+kind: Namespace
+metadata: {name: prod, labels: {environment: production}}
+---
+apiVersion: v1
+kind: Namespace
+metadata: {name: external, labels: {purpose: external-services}}

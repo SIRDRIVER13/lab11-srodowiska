@@ -1,0 +1,48 @@
+# Konto wdrożeniowe ograniczone do jednej przestrzeni nazw: pipeline TEST nie ma uprawnień do PROD
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: deployer, namespace: test}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: deployer, namespace: test}
+rules:
+  - apiGroups: ["", "apps", "networking.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: deployer, namespace: test}
+subjects: [{kind: ServiceAccount, name: deployer, namespace: test}]
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: deployer}
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata: {name: limits, namespace: test}
+spec:
+  hard: {pods: "10", requests.cpu: "1", requests.memory: "1Gi", persistentvolumeclaims: "2"}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: deployer, namespace: prod}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: deployer, namespace: prod}
+rules:
+  - apiGroups: ["", "apps", "networking.k8s.io"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: deployer, namespace: prod}
+subjects: [{kind: ServiceAccount, name: deployer, namespace: prod}]
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: deployer}
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata: {name: limits, namespace: prod}
+spec:
+  hard: {pods: "20", requests.cpu: "2", requests.memory: "2Gi", persistentvolumeclaims: "2"}
